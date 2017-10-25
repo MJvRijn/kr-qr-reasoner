@@ -3,7 +3,7 @@ class Reasoner:
     states = []
 
     def __init__(self):
-        start = State(inflow=('0', '0'), outflow=('0', '0'), volume=('0', '0'), pi='-')
+        start = State(inflow=('0', '0'), outflow=('0', '0'), volume=('0', '0'), pi=('-'))
         start.id = 0
         self.stack.append(start)
         self.states.append(start)
@@ -51,7 +51,6 @@ class State:
         states = []
 
         ## Immediate transitions:
-
         ns = State(self.inflow, self.outflow, self.volume, self.previous_inflow)
 
         # Inflow
@@ -63,12 +62,26 @@ class State:
             ns.volume = ('+', '+')
         elif self.vol_dev() == '-' and self.vol_mag() == 'max':
             ns.volume = ('+', '-')
+        elif self.vol_dev() == '-' and self.vol_mag() == '+':
+            ns.volume = ('0', '-')
 
         # Outflow
         if self.out_dev() == '+' and self.out_mag() == '0':
             ns.outflow = ('+', '+')
         elif self.out_dev() == '-' and self.out_mag() == 'max':
-            ns.outflow = ('+', '-')
+            ns.outflow = ('max', '-')
+        elif self.out_dev() == '-' and self.out_mag() == '+':
+            ns.outflow = ('0', '-')
+
+        if self.vol_dev() == '+' and ns.out_dev() == '0':
+            ns.outflow = (ns.out_mag(), '+')
+        if self.vol_dev() == '+' and ns.out_dev() == '-':
+            ns.outflow = (ns.out_mag(), '0')
+        if self.vol_dev() == '-' and ns.out_dev() == '+':
+            ns.outflow = (ns.out_mag(), '0')
+        if self.vol_dev() == '-' and ns.out_dev() == '0':
+            ns.outflow = (ns.out_mag(), '-')
+
 
         # # VCs
         # if ns.out_mag() == '0':
@@ -93,30 +106,51 @@ class State:
         #     else:
         #         ns.outflow = ('+', ns.out_dev())
 
+
+
+
         if ns != self:
             return [ns]
 
         ## Dependency changes
 
+        print("INFLUENCE")
         # I+ (Inflow, Volume), I- (Outflow, Volume)
-        if (self.in_mag() == '0' and self.out_mag() == '+') or (self.in_mag() == '0' and self.out_mag() == 'max'):
+        # No inflow, positive outflow
+        if self.in_mag() == '0' and self.out_mag() != '0': 
+            # Positive volume, non decreasing
             if self.vol_dev() != '-' and self.vol_mag() != '0':
+                # New state: volume will decrease
                 states.append(State(self.inflow, self.outflow, (self.vol_mag(), '-'), self.previous_inflow))
-        elif self.in_mag() == '+' and self.out_mag() == '0':
+
+        # Positive inflow and no outflow
+        elif self.in_mag() != '0' and self.out_mag() == '0':
+            # Non increasing volume and not max volume
             if self.vol_dev() != '+' and self.vol_mag() != 'max':
+                # New state: volume will increase
                 states.append(State(self.inflow, self.outflow, (self.vol_mag(), '+'), self.previous_inflow))
-        elif (self.in_mag() == '+' and self.out_mag() == '+') or (self.in_mag() == '+' and self.out_mag() == 'max'):
-            if self.vol_dev() != '0':
-                states.append(State(self.inflow, self.outflow, (self.vol_mag(), '0'), self.previous_inflow))
+
+        # Positive Inflow, Positive outflow
+        elif self.in_mag() != '0' and self.out_mag() != '0':
+            if self.vol_dev() == '0':
+                states.append(State(self.inflow, self.outflow, (self.vol_mag(), '-'), self.previous_inflow))
+                states.append(State(self.inflow, self.outflow, (self.vol_mag(), '+'), self.previous_inflow))
             else:
-                if self.vol_mag() != '0':
-                    states.append(State(self.inflow, self.outflow, (self.vol_mag(), '-'), self.previous_inflow))
-                if self.vol_mag() != 'max':
-                    states.append(State(self.inflow, self.outflow, (self.vol_mag(), '+'), self.previous_inflow))
+                if self.vol_dev() == '-':
+                    states.append(State(self.inflow, self.outflow, (self.vol_mag(), '0'), self.previous_inflow))
+                if self.vol_dev() == '+':
+                    states.append(State(self.inflow, self.outflow, (self.vol_mag(), '0'), self.previous_inflow))
 
         # P+ (Volume, Outflow)
-        for state in states:
-            state.outflow = (state.out_mag(), state.vol_dev())
+        #for state in states:
+        #    if self.vol_dev() == '+' and state.out_dev() == '0':
+        #        state.outflow = (state.out_mag(), '+')
+        #    if self.vol_dev() == '+' and state.out_dev() == '-':
+        #        state.outflow = (state.out_mag(), '0')
+        #    if self.vol_dev() == '-' and state.out_dev() == '+':
+        #        state.outflow = (state.out_mag(), '0')
+        #    if self.vol_dev() == '-' and state.out_dev() == '0':
+        #        state.outflow = (state.out_mag(), '-')
 
         if states:
             return states
@@ -135,6 +169,7 @@ class State:
         if states:
             return states
 
+        print("Exogenous")
         # Exogenous transitions
         if self.in_dev() == '0':
             if self.previous_inflow == '+':
