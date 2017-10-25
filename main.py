@@ -1,4 +1,10 @@
-from algorithm_pim import Reasoner
+from algorithm import Reasoner
+from visualise import Visualiser
 
 r = Reasoner()
-r.create_graph(verbose=True)
+v = Visualiser()
+
+root = r.create_graph(verbose=True)
+
+v.process(r.states[0])
+v.show()

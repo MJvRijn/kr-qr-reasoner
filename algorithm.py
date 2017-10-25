@@ -35,10 +35,11 @@ class Reasoner:
                     ns.id = len(self.states)
                     self.states.append(ns)
                     self.stack.append(ns)
+                    state.children.append(ns)
 
 
 class State:
-    children = []
+    # children = []
     id = None
 
     def __init__(self, inflow, outflow, volume, pi):
@@ -46,6 +47,7 @@ class State:
         self.outflow = outflow
         self.volume = volume
         self.previous_inflow = pi
+        self.children = []
 
     def get_transitions(self):
         states = []
