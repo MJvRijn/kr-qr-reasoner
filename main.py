@@ -1,4 +1,4 @@
-from algorithm import Reasoner
+from algorithm_matt import Reasoner
 from visualise import Visualiser
 
 r = Reasoner()
