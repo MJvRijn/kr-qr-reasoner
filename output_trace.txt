@@ -1,0 +1,182 @@
+
+--------------------------------------------------------------------------------
+Visiting state 0 (I=[0,0], V=[0,0], O=[0,0])
+In this state, there is no inflow, the pool is empty and not filling and there is no outflow.
+
+This state transitions to 1 state:
+	1. State 1 (I=[0,+], V=[0,0], O=[0,0]), because:
+		(IM) The inflow magnitude and derivative are both 0, so the inflow is at the start of the parabola and immediately starts to increase.
+
+--------------------------------------------------------------------------------
+Visiting state 1 (I=[0,+], V=[0,0], O=[0,0])
+In this state, there is no inflow, but it is increasing, the pool is empty and not filling and there is no outflow.
+
+This state transitions to 1 state:
+	1. State 2 (I=[+,+], V=[0,0], O=[0,0]), because:
+		(IM) The inflow magnitude is 0 and the derivative is +, so the inflow magnitude immediately becomes positive
+
+--------------------------------------------------------------------------------
+Visiting state 2 (I=[+,+], V=[0,0], O=[0,0])
+In this state, there is an increasing amount of inflow, the pool is empty and not filling and there is no outflow.
+
+This state transitions to 1 state:
+	1. State 3 (I=[+,+], V=[0,+], O=[0,+]), because:
+		(I) There is inflow but no outflow, so the volume must be increasing
+		(P) The volume is increasing, so the outflow must be increasing too
+
+--------------------------------------------------------------------------------
+Visiting state 3 (I=[+,+], V=[0,+], O=[0,+])
+In this state, there is an increasing amount of inflow, the pool is empty, but is filling and there is no outflow, but it is increasing.
+
+This state transitions to 1 state:
+	1. State 4 (I=[+,+], V=[+,+], O=[+,+]), because:
+		(IM) The volume magnitude is 0 and the derivative is +, so the volume magnitude immediately becomes positive
+		(VC) Because of the value correspondences, the outflow magnitude must also increase
+
+--------------------------------------------------------------------------------
+Visiting state 4 (I=[+,+], V=[+,+], O=[+,+])
+In this state, there is an increasing amount of inflow, the pool has an increasing amount of water and there is an increasing mount of outflow.
+
+This state transitions to 3 states:
+	1. State 5 (I=[+,0], V=[+,+], O=[+,+]), because:
+		(T) The inflow is increasing, so it may reach its maximum
+	2. State 6 (I=[+,+], V=[max,0], O=[max,0]), because:
+		(T) The volume is increasing, so it may reach its maximum
+	3. State 6 (I=[+,+], V=[max,0], O=[max,0]), because:
+		(T) The outflow is increasing, so it may reach its maximum
+
+--------------------------------------------------------------------------------
+Visiting state 6 (I=[+,+], V=[max,0], O=[max,0])
+In this state, there is an increasing amount of inflow, the pool is stable and full and the outflow is maximal.
+
+This state transitions to 1 state:
+	1. State 7 (I=[+,0], V=[max,0], O=[max,0]), because:
+		(T) The inflow is increasing, so it may reach its maximum
+
+--------------------------------------------------------------------------------
+Visiting state 7 (I=[+,0], V=[max,0], O=[max,0])
+In this state, the inflow is stable at its maximum, the pool is stable and full and the outflow is maximal.
+
+This state transitions to 1 state:
+	1. State 8 (I=[+,-], V=[max,0], O=[max,0]), because:
+		(IM) The inflow magnitude is + and the derivative is 0, so the inflow is at the top of the parabola, and immediately starts decreasing
+
+--------------------------------------------------------------------------------
+Visiting state 8 (I=[+,-], V=[max,0], O=[max,0])
+In this state, there is a decreasing amount of inflow, the pool is stable and full and the outflow is maximal.
+
+This state transitions to 1 state:
+	1. State 9 (I=[+,-], V=[max,-], O=[max,-]), because:
+		(I) There is inflow and outflow, so the volume could be decreasing
+		(P) The volume is decreasing, so the outflow must be decreasing too
+
+--------------------------------------------------------------------------------
+Visiting state 9 (I=[+,-], V=[max,-], O=[max,-])
+In this state, there is a decreasing amount of inflow, the pool is full, but decreasing and the outflow is maximal, but decreasing.
+
+This state transitions to 1 state:
+	1. State 10 (I=[+,-], V=[+,-], O=[+,-]), because:
+		(IM) The volume magnitude is max and the derivative is -, so the volume magnitude changes to max
+		(VC) Because of the value correspondences, the outflow magnitude must also decrease
+
+--------------------------------------------------------------------------------
+Visiting state 10 (I=[+,-], V=[+,-], O=[+,-])
+In this state, there is a decreasing amount of inflow, the pool has a decreasing amount of water and there is a decreasing amount of outflow.
+
+This state transitions to 3 states:
+	1. State 11 (I=[0,0], V=[+,-], O=[+,-]), because:
+		(T) The inflow is decreasing, so it may reach zero
+	2. State 12 (I=[+,-], V=[0,0], O=[0,0]), because:
+		(T) The inflow is decreasing, so it may reach its zero
+	3. State 12 (I=[+,-], V=[0,0], O=[0,0]), because:
+		(T) The outflow is decreasing, so it may reach zero
+
+--------------------------------------------------------------------------------
+Visiting state 12 (I=[+,-], V=[0,0], O=[0,0])
+In this state, there is a decreasing amount of inflow, the pool is empty and not filling and there is no outflow.
+
+This state transitions to 1 state:
+	1. State 13 (I=[+,-], V=[0,+], O=[0,+]), because:
+		(I) There is inflow but no outflow, so the volume must be increasing
+		(P) The volume is increasing, so the outflow must be increasing too
+
+--------------------------------------------------------------------------------
+Visiting state 13 (I=[+,-], V=[0,+], O=[0,+])
+In this state, there is a decreasing amount of inflow, the pool is empty, but is filling and there is no outflow, but it is increasing.
+
+This state transitions to 1 state:
+	1. State 14 (I=[+,-], V=[+,+], O=[+,+]), because:
+		(IM) The volume magnitude is 0 and the derivative is +, so the volume magnitude immediately becomes positive
+		(VC) Because of the value correspondences, the outflow magnitude must also increase
+
+--------------------------------------------------------------------------------
+Visiting state 14 (I=[+,-], V=[+,+], O=[+,+])
+In this state, there is a decreasing amount of inflow, the pool has an increasing amount of water and there is an increasing mount of outflow.
+
+This state transitions to 3 states:
+	1. State 15 (I=[0,0], V=[+,+], O=[+,+]), because:
+		(T) The inflow is decreasing, so it may reach zero
+	2. State 8 (I=[+,-], V=[max,0], O=[max,0]), because:
+		(T) The volume is increasing, so it may reach its maximum
+	3. State 8 (I=[+,-], V=[max,0], O=[max,0]), because:
+		(T) The outflow is increasing, so it may reach its maximum
+
+--------------------------------------------------------------------------------
+Visiting state 15 (I=[0,0], V=[+,+], O=[+,+])
+In this state, there is no inflow, the pool has an increasing amount of water and there is an increasing mount of outflow.
+
+This state transitions to 1 state:
+	1. State 16 (I=[0,+], V=[+,+], O=[+,+]), because:
+		(IM) The inflow magnitude and derivative are both 0, so the inflow is at the start of the parabola and immediately starts to increase.
+
+--------------------------------------------------------------------------------
+Visiting state 16 (I=[0,+], V=[+,+], O=[+,+])
+In this state, there is no inflow, but it is increasing, the pool has an increasing amount of water and there is an increasing mount of outflow.
+
+This state transitions to 1 state:
+	1. State 4 (I=[+,+], V=[+,+], O=[+,+]), because:
+		(IM) The inflow magnitude is 0 and the derivative is +, so the inflow magnitude immediately becomes positive
+
+--------------------------------------------------------------------------------
+Visiting state 11 (I=[0,0], V=[+,-], O=[+,-])
+In this state, there is no inflow, the pool has a decreasing amount of water and there is a decreasing amount of outflow.
+
+This state transitions to 1 state:
+	1. State 17 (I=[0,+], V=[+,-], O=[+,-]), because:
+		(IM) The inflow magnitude and derivative are both 0, so the inflow is at the start of the parabola and immediately starts to increase.
+
+--------------------------------------------------------------------------------
+Visiting state 17 (I=[0,+], V=[+,-], O=[+,-])
+In this state, there is no inflow, but it is increasing, the pool has a decreasing amount of water and there is a decreasing amount of outflow.
+
+This state transitions to 1 state:
+	1. State 18 (I=[+,+], V=[+,-], O=[+,-]), because:
+		(IM) The inflow magnitude is 0 and the derivative is +, so the inflow magnitude immediately becomes positive
+
+--------------------------------------------------------------------------------
+Visiting state 18 (I=[+,+], V=[+,-], O=[+,-])
+In this state, there is an increasing amount of inflow, the pool has a decreasing amount of water and there is a decreasing amount of outflow.
+
+This state transitions to 3 states:
+	1. State 19 (I=[+,0], V=[+,-], O=[+,-]), because:
+		(T) The inflow is increasing, so it may reach its maximum
+	2. State 2 (I=[+,+], V=[0,0], O=[0,0]), because:
+		(T) The inflow is decreasing, so it may reach its zero
+	3. State 2 (I=[+,+], V=[0,0], O=[0,0]), because:
+		(T) The outflow is decreasing, so it may reach zero
+
+--------------------------------------------------------------------------------
+Visiting state 19 (I=[+,0], V=[+,-], O=[+,-])
+In this state, the inflow is stable at its maximum, the pool has a decreasing amount of water and there is a decreasing amount of outflow.
+
+This state transitions to 1 state:
+	1. State 10 (I=[+,-], V=[+,-], O=[+,-]), because:
+		(IM) The inflow magnitude is + and the derivative is 0, so the inflow is at the top of the parabola, and immediately starts decreasing
+
+--------------------------------------------------------------------------------
+Visiting state 5 (I=[+,0], V=[+,+], O=[+,+])
+In this state, the inflow is stable at its maximum, the pool has an increasing amount of water and there is an increasing mount of outflow.
+
+This state transitions to 1 state:
+	1. State 14 (I=[+,-], V=[+,+], O=[+,+]), because:
+		(IM) The inflow magnitude is + and the derivative is 0, so the inflow is at the top of the parabola, and immediately starts decreasing
