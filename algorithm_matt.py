@@ -12,10 +12,11 @@ class Reasoner:
         while self.stack:
             state = self.stack.pop()
 
-            if verbose:
-                print(state)
+            new_states, reasons = state.get_transitions()
 
-            new_states = state.get_transitions()
+            if verbose:
+                print('\n' + '-'*80)
+                print(state.description(), end='\n\n')
 
             for ns in new_states:
                 # Check existing states for equality
@@ -32,6 +33,24 @@ class Reasoner:
                     self.stack.append(ns)
 
                 state.children.append(ns)
+
+            if verbose:
+                nc = len(state.children)
+                if nc == 0:
+                    print('This is an end state, there are no transitions.')
+                else:
+                    word = 'state' if nc == 1 else 'states'
+                    print('This state transitions to {} {}:'.format(len(state.children), word))
+
+                    for i, s in enumerate(state.children):
+                        print('\t{}. State {} (I=[{},{}], V=[{},{}], O=[{},{}]), because:'.format(i+1, s.id,
+                                                                                       s.inflow.mag, s.inflow.dev,
+                                                                                       s.volume.mag, s.volume.dev,
+                                                                                       s.outflow.mag, s.outflow.dev))
+                        if i < len(reasons):
+                            for r in reasons[i]:
+                                print('\t\t{}'.format(r))
+
 
         return self.states[0]
 
@@ -61,55 +80,82 @@ class State:
             self.previous_inflow = prev.previous_inflow
 
         self.children = []
-        self.exogenous = 'increasing'
 
-    @staticmethod
-    def point_transitions(states):
+    def point_transitions(self):
+        reasons = []
+        states = [State(prev=self)]
+
         for ns in states:
             # Inflow
             if ns.inflow.mag == '0' and ns.inflow.dev == '+':
                 ns.inflow.mag = '+'
+                reasons.append('(IM) The inflow magnitude is 0 and the derivative is +, '
+                                  'so the inflow magnitude immediately becomes positive')
             elif ns.inflow.mag == '+' and ns.inflow.dev == '0':
                 ns.inflow.dev = '-'
+                reasons.append('(IM) The inflow magnitude is + and the derivative is 0, so the inflow is at the top '
+                                  'of the parabola, and immediately starts decreasing')
             elif ns.inflow.mag == '0' and ns.inflow.dev == '0':
                 ns.inflow.dev = '+'
+                reasons.append('(IM) The inflow magnitude and derivative are both 0, so the inflow is at the start '
+                                  'of the parabola and immediately starts to increase.')
 
             # Volume
-            if ns.volume.mag == '0' and ns.volume.dev == '+' or ns.volume.mag == 'max' and ns.volume.dev == '-':
+            if ns.volume.mag == '0' and ns.volume.dev == '+':
                 ns.volume.mag = '+'
                 ns.outflow.mag = '+'  # VC
+                reasons.append('(IM) The volume magnitude is 0 and the derivative is +, '
+                                  'so the volume magnitude immediately becomes positive')
+                reasons.append('(VC) Because of the value correspondences, the outflow magnitude must also increase')
 
-            # Outflow
-            if ns.outflow.mag == '0' and ns.outflow.dev == '+' or ns.outflow.mag == 'max' and ns.outflow.dev == '-':
-                ns.outflow.mag = '+'
-                ns.volume.mag = '+'  # VC
+            if ns.volume.mag == 'max' and ns.volume.dev == '-':
+                ns.volume.mag = '+'
+                ns.outflow.mag = '+'  # VC
+                reasons.append('(IM) The volume magnitude is max and the derivative is -, '
+                                  'so the volume magnitude changes to max')
+                reasons.append('(VC) Because of the value correspondences, the outflow magnitude must also decrease')
+
+            # # Outflow
+            # if ns.outflow.mag == '0' and ns.outflow.dev == '+' or ns.outflow.mag == 'max' and ns.outflow.dev == '-':
+            #     ns.outflow.mag = '+'
+            #     ns.volume.mag = '+'  # VC
+
+            if ns != self:
+                return [ns], [reasons]
+            else:
+                return [], [reasons]
+
 
     def dependency_transitions(self):
+        reasons = []
         states = []
 
         # Influence
-        es = []
-
         if self.inflow.mag != '0' and self.outflow.mag == '0' and self.volume.dev == '0' and self.volume.mag != 'max':
-            es.append(State(prev=self, volume=(self.volume.mag, '+')))
+            states.append(State(prev=self, volume=(self.volume.mag, '+')))
+            reasons.append(['(I) There is inflow but no outflow, so the volume must be increasing'])
 
         elif self.inflow.mag == '0' and self.outflow.mag != '0' and self.volume.dev == '+':
-            es.append(State(prev=self, volume=(self.volume.mag, '0')))
+            states.append(State(prev=self, volume=(self.volume.mag, '0')))
+            reasons.append(['(I) There is outflow but no inflow, so the volume cannot increase'])
 
         elif self.inflow.mag != '0' and self.outflow.mag != '0' and self.volume.dev == '0':
             if self.volume.mag != 'max' and self.inflow.dev != '-':
-                es.append(State(prev=self, volume=(self.volume.mag, '+')))
+                states.append(State(prev=self, volume=(self.volume.mag, '+')))
+                reasons.append(['(I) There is inflow and outflow, so the volume could be increasing'])
             if self.volume.mag != '0' and self.inflow.dev != '+':
-                es.append(State(prev=self, volume=(self.volume.mag, '-')))
-
-        states += es
+                states.append(State(prev=self, volume=(self.volume.mag, '-')))
+                reasons.append(['(I) There is inflow and outflow, so the volume could be decreasing'])
 
         # Proportionality
-        for state in states:
+        for i, state in enumerate(states):
             if state.volume.dev != self.volume.dev:
                 state.outflow.dev = state.volume.dev
-            if state.outflow.dev != self.outflow.dev:
-                state.volume.dev = state.outflow.dev
+                word = 'increasing' if state.volume.dev == '+' else 'decreasing' if state.volume.dev == '-' else 'stable'
+                reasons[i].append('(P) The volume is {}, so the outflow must be {} too'.format(word, word))
+            elif state.outflow.dev != self.outflow.dev:
+                word = 'increasing' if state.volume.dev == '+' else 'decreasing' if state.volume.dev == '-' else 'stable'
+                reasons[i].append('(P) The outflow is {}, so the outflow must be {} too'.format(word, word))
             # if self.volume.dev == '+' and self.outflow.dev == '0' and state.outflow.mag != 'max':
             #     state.outflow.dev = '+'
             # elif self.volume.dev == '+' and self.outflow.dev == '-':
@@ -119,50 +165,114 @@ class State:
             # elif self.volume.dev == '-' and self.outflow.dev == '+':
             #     state.outflow.dev = '0'
 
-        return states
+        return states, reasons
 
     def time_transitions(self):
         states = []
+        reasons = []
 
         # Inflow (Exogenous)
         if self.inflow.mag == '+' and self.inflow.dev == '+':
             states.append(State(prev=self, inflow=('+', '0')))
+            reasons.append(['(T) The inflow is increasing, so it may reach its maximum'])
         elif self.inflow.mag == '+' and self.inflow.dev == '-':
             states.append(State(prev=self, inflow=('0', '0')))
+            reasons.append(['(T) The inflow is decreasing, so it may reach zero'])
 
         # Volume
         if self.volume.dev == '+' and self.volume.mag == '+':
             states.append(State(prev=self, volume=('max', '0'), outflow=('max', '0')))
+            reasons.append(['(T) The volume is increasing, so it may reach its maximum'])
         if self.volume.dev == '-' and self.volume.mag == '+':
             states.append(State(prev=self, volume=('0', '0'), outflow=('0', '0')))
+            reasons.append(['(T) The inflow is decreasing, so it may reach its zero'])
 
         # Outflow
         if self.outflow.dev == '+' and self.outflow.mag == '+':
             states.append(State(prev=self, volume=('max', '0'), outflow=('max', '0')))
+            reasons.append(['(T) The outflow is increasing, so it may reach its maximum'])
         if self.outflow.dev == '-' and self.outflow.mag == '+':
             states.append(State(prev=self, volume=('0', '0'), outflow=('0', '0')))
+            reasons.append(['(T) The outflow is decreasing, so it may reach zero'])
 
-        return states
+        return states, reasons
 
     def get_transitions(self):
-        states = [State(prev=self)]
-
         # Point transitions
-        State.point_transitions(states)
-
-        if states[0] != self:
-            return states
-
-        # Dependency transitions
-        states = self.dependency_transitions()
+        states, reasons = self.point_transitions()
 
         if states:
-            return states
+            return states, reasons
+
+        # Dependency transitions
+        states, reasons = self.dependency_transitions()
+
+        if states:
+            return states, reasons
 
         # Time transitions
-        states = self.time_transitions()
+        states, reasons = self.time_transitions()
 
-        return states
+        return states, reasons
+
+    def description(self):
+        rep = 'I=[{},{}], V=[{},{}], O=[{},{}]'.format(self.inflow.mag, self.inflow.dev, self.volume.mag,
+                                                       self.volume.dev, self.outflow.mag, self.outflow.dev)
+        out = 'Visiting state {} ({})\n'.format(self.id, rep)
+
+        # Inflow
+        if self.inflow.mag == '0' and self.inflow.dev == '0':
+            inf = 'there is no inflow'
+        elif self.inflow.mag == '0' and self.inflow.dev == '+':
+            inf = 'there is no inflow, but it is increasing'
+        elif self.inflow.mag == '+' and self.inflow.dev == '+':
+            inf = 'there is an increasing amount of inflow'
+        elif self.inflow.mag == '+' and self.inflow.dev == '0':
+            inf = 'the inflow is stable at its maximum'
+        elif self.inflow.mag == '+' and self.inflow.dev == '-':
+            inf = 'there is a decreasing amount of inflow'
+        else:
+            inf = 'confused'
+
+        # Volume
+        if self.volume.mag == '0' and self.volume.dev == '0':
+            pool = 'is empty and not filling'
+        elif self.volume.mag == '0' and self.volume.dev == '+':
+            pool = 'is empty, but is filling'
+        elif self.volume.mag == '+' and self.volume.dev == '+':
+            pool = 'has an increasing amount of water'
+        elif self.volume.mag == '+' and self.volume.dev == '0':
+            pool = 'has a stable amount of water'
+        elif self.volume.mag == 'max' and self.volume.dev == '0':
+            pool = 'is stable and full'
+        elif self.volume.mag == 'max' and self.volume.dev == '-':
+            pool = 'is full, but decreasing'
+        elif self.volume.mag == '+' and self.volume.dev == '-':
+            pool = 'has a decreasing amount of water'
+        else:
+            pool = 'confused'
+            
+        # Outflow
+        if self.outflow.mag == '0' and self.outflow.dev == '0':
+            outf = 'there is no outflow'
+        elif self.outflow.mag == '0' and self.outflow.dev == '+':
+            outf = 'there is no outflow, but it is increasing'
+        elif self.outflow.mag == '+' and self.outflow.dev == '+':
+            outf = 'there is an increasing mount of outflow'
+        elif self.outflow.mag == '+' and self.outflow.dev == '0':
+            outf = 'there is a stable amount of outflow'
+        elif self.outflow.mag == 'max' and self.outflow.dev == '0':
+            outf = 'the outflow is maximal'
+        elif self.outflow.mag == 'max' and self.outflow.dev == '-':
+            outf = 'the outflow is maximal, but decreasing'
+        elif self.outflow.mag == '+' and self.outflow.dev == '-':
+            outf = 'there is a decreasing amount of outflow'
+        else:
+            outf = 'confused'
+
+        out += 'In this state, {}, the pool {} and {}.'.format(inf, pool, outf)
+
+        return out
 
     def __str__(self):
         out = '{}:\n'.format(self.id)
