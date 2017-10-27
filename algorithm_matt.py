@@ -139,13 +139,23 @@ class State:
             states.append(State(prev=self, volume=(self.volume.mag, '0')))
             reasons.append(['(I) There is outflow but no inflow, so the volume cannot increase'])
 
-        elif self.inflow.mag != '0' and self.outflow.mag != '0' and self.volume.dev == '0':
+        elif self.inflow.mag == '+' and self.outflow.mag != '0' and self.volume.dev == '0':
             if self.volume.mag != 'max' and self.inflow.dev != '-':
                 states.append(State(prev=self, volume=(self.volume.mag, '+')))
                 reasons.append(['(I) There is inflow and outflow, so the volume could be increasing'])
             if self.volume.mag != '0' and self.inflow.dev != '+':
                 states.append(State(prev=self, volume=(self.volume.mag, '-')))
                 reasons.append(['(I) There is inflow and outflow, so the volume could be decreasing'])
+
+        if self.inflow.dev == '-' and self.outflow.mag == '+' and self.outflow.dev == '+':
+            states.append(State(prev=self, volume=(self.volume.mag, '0')))
+            reasons.append(['(I) The inflow may decrease below the level of the outflow, '
+                            'causing the volume to stop increasing'])
+
+        if self.inflow.dev == '+' and self.volume.dev == '-':
+            states.append(State(prev=self, volume=(self.volume.mag, '0')))
+            reasons.append(['(I) The inflow may increase above the level of the outflow, '
+                            'causing the volume to stop decreasing'])
 
         # Proportionality
         for i, state in enumerate(states):
@@ -156,6 +166,7 @@ class State:
             elif state.outflow.dev != self.outflow.dev:
                 word = 'increasing' if state.volume.dev == '+' else 'decreasing' if state.volume.dev == '-' else 'stable'
                 reasons[i].append('(P) The outflow is {}, so the outflow must be {} too'.format(word, word))
+
             # if self.volume.dev == '+' and self.outflow.dev == '0' and state.outflow.mag != 'max':
             #     state.outflow.dev = '+'
             # elif self.volume.dev == '+' and self.outflow.dev == '-':
@@ -183,7 +194,7 @@ class State:
         if self.volume.dev == '+' and self.volume.mag == '+':
             states.append(State(prev=self, volume=('max', '0'), outflow=('max', '0')))
             reasons.append(['(T) The volume is increasing, so it may reach its maximum'])
-        if self.volume.dev == '-' and self.volume.mag == '+':
+        if self.volume.dev == '-' and self.volume.mag == '+' and self.inflow.mag == '0':
             states.append(State(prev=self, volume=('0', '0'), outflow=('0', '0')))
             reasons.append(['(T) The inflow is decreasing, so it may reach its zero'])
 
@@ -191,7 +202,7 @@ class State:
         if self.outflow.dev == '+' and self.outflow.mag == '+':
             states.append(State(prev=self, volume=('max', '0'), outflow=('max', '0')))
             reasons.append(['(T) The outflow is increasing, so it may reach its maximum'])
-        if self.outflow.dev == '-' and self.outflow.mag == '+':
+        if self.outflow.dev == '-' and self.outflow.mag == '+' and self.inflow.mag == '0':
             states.append(State(prev=self, volume=('0', '0'), outflow=('0', '0')))
             reasons.append(['(T) The outflow is decreasing, so it may reach zero'])
 
